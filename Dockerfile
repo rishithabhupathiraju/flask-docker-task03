@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.12-slim AS builder
+FROM python:3.12-alpine AS builder
 
 WORKDIR /app
 
@@ -10,28 +10,21 @@ RUN python -m venv /opt/venv && \
 
 
 # Stage 2: Runtime
-FROM python:3.12-slim
+FROM python:3.12-alpine
 
 WORKDIR /app
 
-# Create a non-root user
-RUN useradd --create-home appuser
+RUN adduser -D appuser
 
-# Copy the virtual environment
 COPY --from=builder /opt/venv /opt/venv
-
-# Copy application
 COPY app.py .
 
-# Use the virtual environment
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Run as non-root user
 USER appuser
 
 EXPOSE 5000
 
-# Container health check
 HEALTHCHECK --interval=30s --timeout=5s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
 
